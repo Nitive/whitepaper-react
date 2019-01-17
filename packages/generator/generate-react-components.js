@@ -27,7 +27,7 @@ function collectElementsNames(dir) {
 }
 
 function collectAssets(dir) {
-    return glob('**/*.*', { cwd: dir, onlyFiles: true, ignore: ['*.md'] })
+    return glob('**/*.*', { cwd: dir, onlyFiles: true, ignore: ['**/*.md', '**/*.js'] })
 }
 
 function parseModPropType(values) {
@@ -205,12 +205,51 @@ function stringifyElement(block, element) {
     ].join('\n')
 }
 
+async function readDeps(depsFilePath) {
+    const fileContent = await fs.readFile(depsFilePath, 'utf-8')
+    const deps = eval(fileContent)[0]
+    return deps.mustDeps
+        .map(({ block, element, mods }) => {
+            const modName = Object.keys(mods)[0]
+            const modValue = mods[modName]
+
+            return `${block}/_${modName}/${block}_${modName}_${modValue}`
+        })
+}
+
+async function collectAssetDeps(asset) {
+    const depsFilePath = asset.replace('.post.css', '') + '.deps.js'
+    
+    if (await fs.exists(depsFilePath)) {
+        return readDeps(depsFilePath)
+    }
+
+    return []
+}
+
 function copyModsAssets(sourceDir, destDir, block) {
     return asyncMap(uniteAssets(block), async asset => {
         const source = path.join(sourceDir, asset)
         const dest = path.join(destDir, asset)
+        const deps = await collectAssetDeps(source)
+
         await mkdirp(path.dirname(dest))
-        await fs.copyFile(source, dest)
+
+        if (deps.length) {
+            if (path.extname(asset) !== '.css') {
+                throw new Error('Unexpected dependency')
+            }
+
+            const newFileContent = [
+                ...deps.map(dep => `@import '../../${dep}.post.css';`),
+                '',
+                await fs.readFile(source, 'utf-8')
+            ].join('\n')
+
+            fs.writeFile(dest, newFileContent, 'utf-8')
+        } else {
+            await fs.copyFile(source, dest)
+        }
     })
 }
 
@@ -250,8 +289,9 @@ async function generateReactComponents() {
         onlyDirectories: true,
         absolute: true
     })
-    asyncMap(blocks, generateReactComponent)
+    await asyncMap(blocks, generateReactComponent)
+    console.log('Success!   ')
 }
 
 generateReactComponents()
-    .catch(console.error)
+    .catch(err => console.error('Error!', err))
