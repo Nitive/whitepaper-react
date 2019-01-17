@@ -1,0 +1,16 @@
+{
+  "private": true,
+  "name": "generator",
+  "version": "0.1.0",
+  "scripts": {
+    "pregenerate": "rm -rf ../whitepaper-react/*/",
+    "generate": "./generate-react-components.js"
+  },
+  "devDependencies": {
+    "case": "^1.6.1",
+    "fast-glob": "^2.2.6",
+    "mz": "^2.7.0",
+    "mz-modules": "^2.1.0",
+    "whitepaper-bem": "^1.0.0"
+  }
+}
