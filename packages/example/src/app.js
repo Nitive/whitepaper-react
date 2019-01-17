@@ -2,6 +2,7 @@ import React from 'react'
 import { render } from 'react-dom'
 import { Theme } from '@nitive/whitepaper-react/theme'
 import { Text } from '@nitive/whitepaper-react/text'
+import { Icon } from '@nitive/whitepaper-react/icon'
 
 function App() {
   return (
@@ -18,7 +19,7 @@ function App() {
         Whitepaper React
       </Text>
       <Text type='blockquote' size='l' weight='regular' view='secondary' short='medium'>
-        Автоматически сгенерированная библиотека для работы с Whitepaper
+        Автоматически сгенерированная библиотека для работы с Whitepaper <Icon name='check' size='m' tag='span' />
       </Text>
     </Theme>
   )

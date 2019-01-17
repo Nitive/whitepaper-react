@@ -30,6 +30,10 @@ function collectAssets(dir) {
     return glob('**/*.*', { cwd: dir, onlyFiles: true, ignore: ['**/*.md', '**/*.js'] })
 }
 
+function collectTemplates(dir) {
+    return glob('**/*.bemhtml.js', { cwd: dir, onlyFiles: true, absolute: true })
+}
+
 function parseModPropType(values) {
     if (values.every(v => typeof v === 'boolean')) {
         return 'boolean'
@@ -41,15 +45,17 @@ function parseModPropType(values) {
 async function collectModInfo(modDir, { blockName, elementName }) {
     const assets = await collectAssets(modDir)
     const name = path.basename(modDir).slice(separators.mod.length)
-    const values = assets
-        .filter(asset => path.extname(asset) === '.css')
+    const templates = await collectTemplates(modDir)
+    const values = [
+        ...assets.filter(asset => path.extname(asset) === '.css').map(asset => asset.replace(/\.post\.css$/, '')),
+        ...templates.map(template => path.basename(template).replace(/\.bemhtml\.js$/, '')),
+    ]
         .map(asset => {
             const value = asset
                 .replace(blockName, '')
                 .replace(separators.element, '')
                 .replace(elementName || '', '')
                 .replace(separators.mod, '')
-                .replace(/\.post\.css$/, '')
                 .split(separators.mod)[1]
 
             return value === undefined ? true : value
@@ -59,6 +65,7 @@ async function collectModInfo(modDir, { blockName, elementName }) {
         type: 'mod',
         name,
         assets,
+        templates,
         propType: parseModPropType(values),
     }
 }
@@ -150,7 +157,70 @@ const commonImports = [
     `import { block } from 'bem-cn';`,
 ]
 
-function stringifyBlock(block) {
+async function compileTemplate(templatePath) {
+    const result = []
+
+    // Используется внутри eval(template)
+    function block() {
+        const mods = []
+        function compile({ content: { html } }) {
+            result.push({ html, mods })
+        }
+
+        compile.mod = (name, value) => {
+            mods.push({ name, value })
+            return compile
+        }
+
+        return compile
+    }
+
+    const template = await fs.readFile(templatePath, 'utf-8')
+    eval(template)
+
+    return result
+        .map(({ html, mods }) => {
+            const conditions = mods.map(mod => `props.${camel(mod.name)} === '${mod.value}'`).join(' && ')
+
+            return [
+                `  if (${conditions}) {`,
+                `    return <Tag {...attrs} dangerouslySetInnerHTML={{ __html: '${html}' }} />`,
+                `  }`,
+            ].join('\n')
+        })
+        .join('\n\n')
+}
+
+async function compileTemplates(templatesPaths) {
+    const compiled = await asyncMap(templatesPaths, compileTemplate)
+    return [
+        `({ Tag, props, attrs }) => {`,
+        compiled.join('\n\n'),
+        `}`,
+    ].join('\n')
+}
+
+function getBlockTemplates(block) {
+    return flatten(
+        block.mods
+            .map(mod => mod.templates)
+            .filter(templates => templates.length > 0)
+    )
+}
+
+async function getBlockContent(block) {
+    const defaultContent = '{props.children}'
+    const templates = getBlockTemplates(block)
+    if (! templates.length) {
+        return defaultContent
+    }
+
+    const content = await compileTemplates(templates)
+
+    return `{(${content})({ Tag, attrs: { className }, props })}`
+}
+
+async function stringifyBlock(block) {
     const componentName = pascal(block.name)
     const elementsExports = block.elements.map(element => `export { ${getClassForElement(block, element)} } from './${element.name}'`)
 
@@ -165,7 +235,7 @@ function stringifyBlock(block) {
         `  const Tag = props.tag || 'div'`,
         ...generateClassName(block),
         ``,
-        `  return <Tag className={className}>{props.children}</Tag>`,
+        `  return <Tag className={className}>${await getBlockContent(block)}</Tag>`,
         `}`,
         ``,
         `${componentName}.propTypes = {`,
@@ -255,8 +325,7 @@ function copyModsAssets(sourceDir, destDir, block) {
 
 async function generateReactComponent(blockAbsolutePath) {
     const blockInfo = await collectBlockInfo(blockAbsolutePath)
-
-    const block = stringifyBlock(blockInfo)
+    const block = await stringifyBlock(blockInfo)
     const elements = blockInfo.elements.map(element => ({ ...element, content: stringifyElement(blockInfo, element) }))
 
     const blockDir = path.join(__dirname, '../whitepaper-react', blockInfo.name)
