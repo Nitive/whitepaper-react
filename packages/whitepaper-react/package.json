@@ -13,6 +13,7 @@
   "author": "@nitive",
   "license": "MIT",
   "dependencies": {
-    "bem-cn": "^3.0.1"
+    "bem-cn": "^3.0.1",
+    "kebab-case": "^1.0.0"
   }
 }
