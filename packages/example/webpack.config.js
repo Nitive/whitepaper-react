@@ -1,3 +1,4 @@
+const { HotModuleReplacementPlugin } = require('webpack')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 
 module.exports = {
@@ -6,11 +7,17 @@ module.exports = {
   output: {
     path: __dirname + '/dist',
   },
+  devtool: false,
+  devServer: {
+    contentBase: __dirname + '/dist',
+    hot: true,
+  },
   module: {
     rules: [
       {
         test: /\.js$/,
         loader: 'babel-loader',
+        options: { cacheDirectory: true },
         exclude: /node_modules/,
       },
       {
@@ -28,6 +35,7 @@ module.exports = {
     ],
   },
   plugins: [
-    new HtmlWebpackPlugin()
-  ]
+    new HtmlWebpackPlugin(),
+    new HotModuleReplacementPlugin()
+  ],
 }

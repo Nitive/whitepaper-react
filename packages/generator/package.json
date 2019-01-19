@@ -3,10 +3,12 @@
   "name": "generator",
   "version": "0.1.0",
   "scripts": {
-    "pregenerate": "rm -rf ../whitepaper-react/*/",
-    "generate": "./generate-react-components.js"
+    "pregenerate": "rm -rf ../whitepaper-react/components/*",
+    "generate": "./generate-react-components.js",
+    "generate-no-clean": "./generate-react-components.js"
   },
   "devDependencies": {
+    "@bem/naming": "2.0.0-5",
     "case": "^1.6.1",
     "fast-glob": "^2.2.6",
     "mz": "^2.7.0",

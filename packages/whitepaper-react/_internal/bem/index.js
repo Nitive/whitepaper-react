@@ -13,15 +13,42 @@ function mapKeys(obj, f) {
     return newObj
 }
 
-function cn(block, elem, mods, mix) {
-    return bemCn(block)(elem, mapKeys(mods, kebab)).mix(mix)
+function pickOmitObj(obj, keys) {
+    const picked = {}
+    const omited = {}
+
+    Object.keys(obj).forEach(key => {
+        if (keys.indexOf(key) !== -1) {
+            picked[key] = obj[key]
+        } else {
+            omited[key] = obj[key]
+        }
+    })
+
+    return [picked, omited]
 }
 
-export function Bem({ tag: Tag = 'div', block, elem, mods, className, ...props }) {
+function cn(block, elem, mods, mix) {
+    return bemCn(block)(elem, mapKeys(mods, kebab)).mix(mix).toString()
+}
+
+export function Bem({ tag, block, elem, modNames, className, mix, getHtml, attrs, ...props }) {
+    const [mods, attrProps] = pickOmitObj(props, modNames)
+    const [MixComponent, mixProps] = mix || []
+    const Tag = MixComponent || tag || 'div'
+    if (block === 'pt-list' && elem === 'item') {
+        console.log({ tag, block, elem, modNames, className, mix, props })
+    }
+    const html = getHtml && getHtml(props)
+
     return (
         <Tag
-            {...props}
+            {...mixProps}
+            {...attrProps}
+            {...attrs}
+            tag={tag}
             className={cn(block, elem, mods, className)}
+            dangerouslySetInnerHTML={html && { __html: html }}
         />
     )
 }
@@ -30,11 +57,6 @@ Bem.propTypes = {
     tag: PropTypes.any, // component or string
     block: PropTypes.string.isRequired,
     elem: PropTypes.string,
-    mods: PropTypes.objectOf(
-        PropTypes.oneOfType([
-            PropTypes.string,
-            PropTypes.number,
-            PropTypes.boolean,
-        ])
-    ),
+    modNames: PropTypes.arrayOf(PropTypes.string),
+    mix: PropTypes.array,
 }

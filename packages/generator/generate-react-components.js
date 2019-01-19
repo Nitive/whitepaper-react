@@ -4,6 +4,7 @@ const path = require('path')
 const glob = require('fast-glob')
 const { pascal, camel } = require('case')
 const mkdirp = require('mz-modules/mkdirp');
+const bemNaming = require('@bem/naming');
 
 const separators = {
     element: '__',
@@ -108,35 +109,8 @@ async function collectBlockInfo(dir) {
     }
 }
 
-function uniteAssets(block) {
-    return [
-        ...block.assets,
-        ...flatten(block.mods.map(mod => mod.assets.map(asset => path.join(separators.mod + mod.name, asset))))
-    ]
-}
-
-function generateClassName(block) {
-    const prefix = {
-        block: ``,
-        element: `'${block.name}'`,
-    }[block.type]
-    const modPairs = block.mods.map(mod => `    '${mod.name}': props.${camel(mod.name)},`)
-
-    if (!modPairs.length) {
-        return [
-            `  const className = b(${prefix})`,
-        ]
-    }
-
-    return [
-        `  const className = b(${prefix && `${prefix}, ` || ''}{`,
-        ...modPairs,
-        `  })`,
-    ]
-}
-
 function generateCssImports(block) {
-    return uniteAssets(block)
+    return block.assets
         .filter(filePath => path.extname(filePath) === '.css')
         .map(filePath => `import './${filePath}'`)
 }
@@ -154,7 +128,6 @@ function getClassForElement(block, element) {
 const commonImports = [
     `import React from 'react'`,
     `import PropTypes from 'prop-types'`,
-    `import { block } from 'bem-cn';`,
 ]
 
 async function compileTemplate(templatePath) {
@@ -183,9 +156,9 @@ async function compileTemplate(templatePath) {
             const conditions = mods.map(mod => `props.${camel(mod.name)} === '${mod.value}'`).join(' && ')
 
             return [
-                `  if (${conditions}) {`,
-                `    return <Tag {...attrs} dangerouslySetInnerHTML={{ __html: '${html}' }} />`,
-                `  }`,
+                `        if (${conditions}) {`,
+                `          return '${html}'`,
+                `        }`,
             ].join('\n')
         })
         .join('\n\n')
@@ -194,9 +167,9 @@ async function compileTemplate(templatePath) {
 async function compileTemplates(templatesPaths) {
     const compiled = await asyncMap(templatesPaths, compileTemplate)
     return [
-        `({ Tag, props, attrs }) => {`,
+        `(props) => {`,
         compiled.join('\n\n'),
-        `}`,
+        `      }`,
     ].join('\n')
 }
 
@@ -208,16 +181,17 @@ function getBlockTemplates(block) {
     )
 }
 
-async function getBlockContent(block) {
-    const defaultContent = '{props.children}'
+async function renderGetHtml(block) {
     const templates = getBlockTemplates(block)
     if (! templates.length) {
-        return defaultContent
+        return `undefined`
     }
 
-    const content = await compileTemplates(templates)
+    return compileTemplates(templates)
+}
 
-    return `{(${content})({ Tag, attrs: { className }, props })}`
+function getModNames(mods) {
+    return `[${mods.map(mod => `'${camel(mod.name)}'`).join(', ')}]`
 }
 
 async function stringifyBlock(block) {
@@ -226,21 +200,27 @@ async function stringifyBlock(block) {
 
     return [
         ...commonImports,
+        `import { Bem } from '../../_internal/bem'`,
         ``,
         ...generateCssImports(block),
         ``,
-        `const b = block('${block.name}')`,
+        `const modNames = ${getModNames(block.mods)}`,
         ``,
-        `export function ${componentName}(props) {`,
-        `  const Tag = props.tag || 'div'`,
-        ...generateClassName(block),
-        ``,
-        `  return <Tag className={className}>${await getBlockContent(block)}</Tag>`,
+        `export function ${componentName}({ modNames: additionalModNames, ...props }) {`,
+        `  return (`,
+        `    <Bem`,
+        `      block='${block.name}'`,
+        `      {...props}`,
+        `      modNames={modNames.concat(additionalModNames || [])}`,
+        `      getHtml={${await renderGetHtml(block)}}`,
+        `    />`,
+        `  )`,
         `}`,
         ``,
         `${componentName}.propTypes = {`,
         `  tag: PropTypes.string,`,
         `  className: PropTypes.string,`,
+        `  modNames: PropTypes.arrayOf(PropTypes.string),`,
         ...generateModsPropTypes(block),
         `}`,
         ``,
@@ -254,21 +234,20 @@ function stringifyElement(block, element) {
 
     return [
         ...commonImports,
+        `import { Bem } from '../../../_internal/bem'`,
         ``,
         ...generateCssImports(element),
         ``,
-        `const b = block('${block.name}')`,
+        `const modNames = ${getModNames(element.mods)}`,
         ``,
-        `export function ${componentName}(props) {`,
-        `  const Tag = props.tag || 'div'`,
-        ...generateClassName(element),
-        ``,
-        `  return <Tag className={className}>{props.children}</Tag>`,
+        `export function ${componentName}({ modNames: additionalModNames, ...props }) {`,
+        `  return <Bem block='${block.name}' elem='${element.name}' {...props} modNames={modNames.concat(additionalModNames || [])} />`,
         `}`,
         ``,
         `${componentName}.propTypes = {`,
         `  tag: PropTypes.string,`,
         `  className: PropTypes.string,`,
+        `  modNames: PropTypes.arrayOf(PropTypes.string),`,
         ...generateModsPropTypes(element),
         `}`,
         ``,
@@ -297,8 +276,16 @@ async function collectAssetDeps(asset) {
     return []
 }
 
+function stripExt(filePath) {
+    return filePath.split('.')[0]
+}
+
+function fileNameWithoutExt(fileName) {
+    return stripExt(path.basename(fileName))
+}
+
 function copyModsAssets(sourceDir, destDir, block) {
-    return asyncMap(uniteAssets(block), async asset => {
+    return asyncMap(block.assets, async asset => {
         const source = path.join(sourceDir, asset)
         const dest = path.join(destDir, asset)
         const deps = await collectAssetDeps(source)
@@ -310,8 +297,11 @@ function copyModsAssets(sourceDir, destDir, block) {
                 throw new Error('Unexpected dependency')
             }
 
+            const { elem, mod } = bemNaming.parse(fileNameWithoutExt(asset))
+            const rootPath = `../${[elem, mod].filter(Boolean).map(() => '../').join('')}`
+
             const newFileContent = [
-                ...deps.map(dep => `@import '../../${dep}.post.css';`),
+                ...deps.map(dep => `@import '${rootPath}${dep}.post.css';`),
                 '',
                 await fs.readFile(source, 'utf-8')
             ].join('\n')
@@ -328,7 +318,7 @@ async function generateReactComponent(blockAbsolutePath) {
     const block = await stringifyBlock(blockInfo)
     const elements = blockInfo.elements.map(element => ({ ...element, content: stringifyElement(blockInfo, element) }))
 
-    const blockDir = path.join(__dirname, '../whitepaper-react', blockInfo.name)
+    const blockDir = path.join(__dirname, '../whitepaper-react/_components', blockInfo.name)
     await mkdirp(blockDir)
     await Promise.all([
         fs.writeFile(`${blockDir}/index.js`, block),
@@ -359,7 +349,7 @@ async function generateReactComponents() {
         absolute: true
     })
     await asyncMap(blocks, generateReactComponent)
-    console.log('Success!   ')
+    console.log('Components are generated')
 }
 
 generateReactComponents()
