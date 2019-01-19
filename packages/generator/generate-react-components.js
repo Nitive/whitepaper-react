@@ -313,6 +313,12 @@ function copyModsAssets(sourceDir, destDir, block) {
     })
 }
 
+function renderIndexFile(blockPaths) {
+    return blockPaths.map(blockPath => {
+        return `export * from './_components/${path.basename(blockPath)}'`
+    }).join('\n') + '\n'
+}
+
 async function generateReactComponent(blockAbsolutePath) {
     const blockInfo = await collectBlockInfo(blockAbsolutePath)
     const block = await stringifyBlock(blockInfo)
@@ -346,9 +352,13 @@ async function generateReactComponents() {
     const blocks = await glob(`*`, {
         cwd: path.join(__dirname, '../../node_modules/whitepaper-bem'),
         onlyDirectories: true,
-        absolute: true
+        absolute: true,
+        ignore: ['node_modules'],
     })
-    await asyncMap(blocks, generateReactComponent)
+    await Promise.all([
+        asyncMap(blocks, generateReactComponent),
+        fs.writeFile(path.join(__dirname, '../whitepaper-react/index.js'), renderIndexFile(blocks)),
+    ])
     console.log('Components are generated')
 }
 

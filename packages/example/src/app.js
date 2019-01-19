@@ -1,10 +1,17 @@
-import { Icon } from '@nitive/whitepaper-react/_components/icon'
-import { PtList, PtListItem } from '@nitive/whitepaper-react/_components/pt-list'
-import { PtTable, PtTableCol, PtTableRow } from '@nitive/whitepaper-react/_components/pt-table'
-import { Text } from '@nitive/whitepaper-react/_components/text'
-import { Theme } from '@nitive/whitepaper-react/_components/theme'
-import { TplGrid, TplGridFraction } from '@nitive/whitepaper-react/_components/tpl-grid'
-import { TplLayout, TplLayoutContainer } from '@nitive/whitepaper-react/_components/tpl-layout'
+import {
+  Icon,
+  PtList,
+  PtListItem,
+  PtTable,
+  PtTableCol,
+  PtTableRow,
+  Text,
+  Theme,
+  TplGrid,
+  TplGridFraction,
+  TplLayout,
+  TplLayoutContainer,
+} from '@nitive/whitepaper-react'
 import React from 'react'
 import { render } from 'react-dom'
 

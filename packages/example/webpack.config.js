@@ -29,7 +29,7 @@ module.exports = {
         ],
       },
       {
-        test: /\.(woff|woff2|eot|otf|ttf|txt|gif|jpg|png)$/,
+        test: /\.(woff|woff2|eot|otf|ttf|txt|gif|jpg|png|svg)$/,
         loader: 'file-loader',
       }
     ],

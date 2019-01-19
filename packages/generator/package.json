@@ -3,7 +3,7 @@
   "name": "generator",
   "version": "0.1.0",
   "scripts": {
-    "pregenerate": "rm -rf ../whitepaper-react/components/*",
+    "pregenerate": "git clean -fx ../whitepaper-react",
     "generate": "./generate-react-components.js",
     "generate-no-clean": "./generate-react-components.js"
   },
