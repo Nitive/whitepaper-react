@@ -1,2 +1,4 @@
-/_components
-index.js
+/src/_components
+/src/index.js
+/commonjs
+/modules

@@ -324,7 +324,7 @@ async function generateReactComponent(blockAbsolutePath) {
     const block = await stringifyBlock(blockInfo)
     const elements = blockInfo.elements.map(element => ({ ...element, content: stringifyElement(blockInfo, element) }))
 
-    const blockDir = path.join(__dirname, '../whitepaper-react/_components', blockInfo.name)
+    const blockDir = path.join(__dirname, '../whitepaper-react/src/_components', blockInfo.name)
     await mkdirp(blockDir)
     await Promise.all([
         fs.writeFile(`${blockDir}/index.js`, block),
@@ -357,7 +357,7 @@ async function generateReactComponents() {
     })
     await Promise.all([
         asyncMap(blocks, generateReactComponent),
-        fs.writeFile(path.join(__dirname, '../whitepaper-react/index.js'), renderIndexFile(blocks)),
+        fs.writeFile(path.join(__dirname, '../whitepaper-react/src/index.js'), renderIndexFile(blocks)),
     ])
     console.log('Components are generated')
 }
