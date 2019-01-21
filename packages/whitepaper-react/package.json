@@ -1,6 +1,9 @@
 {
   "name": "@nitive/whitepaper-react",
   "version": "0.1.0",
+  "scripts": {
+    "prepublishOnly": "cd ../generator && npm run generate"
+  },
   "files": [
     "/*/"
   ],
