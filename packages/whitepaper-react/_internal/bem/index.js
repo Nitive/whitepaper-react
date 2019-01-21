@@ -36,9 +36,6 @@ export function Bem({ tag, block, elem, modNames, className, mix, getHtml, attrs
     const [mods, attrProps] = pickOmitObj(props, modNames)
     const [MixComponent, mixProps] = mix || []
     const Tag = MixComponent || tag || 'div'
-    if (block === 'pt-list' && elem === 'item') {
-        console.log({ tag, block, elem, modNames, className, mix, props })
-    }
     const html = getHtml && getHtml(props)
 
     return (
