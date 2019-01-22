@@ -43,7 +43,7 @@ export function Bem({ tag, block, elem, modNames, className, mix, getHtml, attrs
             {...mixProps}
             {...attrProps}
             {...attrs}
-            tag={tag}
+            tag={MixComponent ? tag : undefined}
             className={cn(block, elem, mods, className)}
             dangerouslySetInnerHTML={html && { __html: html }}
         />
