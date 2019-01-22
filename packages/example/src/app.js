@@ -37,7 +37,9 @@ function About() {
 
 function Example(props) {
   return (
-    <TplGridFraction style={{ border: '1px solid var(--color-bg-border)', height: '100%', padding: '20px' }}>
+    <TplGridFraction
+      style={{ border: '1px solid var(--color-bg-border)', height: '220px', padding: '20px', marginBottom: '50px' }}
+    >
       {props.children}
     </TplGridFraction>
   )
