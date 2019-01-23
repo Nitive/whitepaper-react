@@ -1,4 +1,3 @@
-const path = require('path')
 const { HotModuleReplacementPlugin, DefinePlugin } = require('webpack')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
@@ -32,7 +31,6 @@ module.exports = {
         loader: [
           { production: MiniCssExtractPlugin.loader, development: 'style-loader' }[mode],
           { loader: 'css-loader', options: { importLoaders: 1 } },
-          { loader: 'postcss-loader', options: require('./postcss.config') },
         ],
       },
       {
