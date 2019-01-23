@@ -5,7 +5,8 @@
     "commonjs": "cp -rf src commonjs && babel --config-file ./babel.commonjs.js commonjs -d commonjs",
     "modules": "cp -rf src modules && babel --config-file ./babel.modules.js modules -d modules",
     "generate": "cd ../generator && npm run generate && cd ../whitepaper-react",
-    "prepublishOnly": "npm run generate && npm run commonjs && npm run modules"
+    "prepublishOnly": "npm run generate && npm run commonjs && npm run modules",
+    "postcss-build": "npx postcss ./src/**/*.css --dir ./build-src --base ./src --no-map --verbose --config ./postcss.config.js && cp -rf build-src/ src"
   },
   "files": [
     "/modules",
@@ -24,6 +25,9 @@
   "dependencies": {
     "bem-cn": "^3.0.1",
     "kebab-case": "^1.0.0",
+    "postcss-import": "^12.0.1",
+    "postcss-preset-env": "^6.5.0",
+    "precss": "^4.0.0",
     "prop-types": "^15.6.2",
     "react": "^16.7.0"
   },
@@ -32,6 +36,8 @@
     "@babel/core": "^7.2.2",
     "@babel/plugin-transform-modules-commonjs": "^7.2.0",
     "@babel/preset-env": "^7.2.3",
-    "@babel/preset-react": "^7.0.0"
+    "@babel/preset-react": "^7.0.0",
+    "postcss": "^7.0.14",
+    "postcss-cli": "^6.1.1"
   }
 }
