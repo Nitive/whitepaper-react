@@ -1,6 +1,6 @@
 {
   "name": "@nitive/whitepaper-react",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "scripts": {
     "clean": "rm -rf build-src commonjs modules src/_components src/index.js",
     "commonjs": "cp -rf src commonjs && babel --config-file ./babel.commonjs.js commonjs -d commonjs",
