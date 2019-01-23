@@ -3,9 +3,7 @@
   "name": "generator",
   "version": "0.1.0",
   "scripts": {
-    "pregenerate": "git clean -fx ../whitepaper-react",
-    "generate": "./generate-react-components.js",
-    "generate-no-clean": "./generate-react-components.js"
+    "generate": "./generate-react-components.js"
   },
   "devDependencies": {
     "@bem/naming": "2.0.0-5",
