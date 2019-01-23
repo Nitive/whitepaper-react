@@ -5,7 +5,7 @@
     "commonjs": "cp -rf src commonjs && babel --config-file ./babel.commonjs.js commonjs -d commonjs",
     "modules": "cp -rf src modules && babel --config-file ./babel.modules.js modules -d modules",
     "generate": "cd ../generator && npm run generate && cd ../whitepaper-react",
-    "prepublishOnly": "npm run generate && npm run commonjs && npm run modules",
+    "prepublishOnly": "npm run generate && npm run postcss-build && npm run commonjs && npm run modules",
     "postcss-build": "npx postcss ./src/**/*.css --dir ./build-src --base ./src --no-map --verbose --config ./postcss.config.js && cp -rf build-src/ src"
   },
   "files": [
